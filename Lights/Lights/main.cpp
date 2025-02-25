@@ -3,8 +3,10 @@
 #include <util/delay.h>
 
 // Define I2C addresses for each expander
-#define EXPANDER_1_ADDRESS 0x58
-#define EXPANDER_2_ADDRESS 0x59
+#define EXPANDER_1_ADDRESS 0x58 // RED
+#define EXPANDER_2_ADDRESS 0x59 // BLUE
+#define EXPANDER_3_ADDRESS 0x5A // GREEN
+#define EXPANDER_4_ADDRESS 0x5B // YELLOW
 
 // Register addresses for AW9523B
 #define REG_CONFIG_PORTA 0x04
@@ -37,13 +39,22 @@ int main(void) {
 	// Configure both expanders
 	configureExpander(EXPANDER_1_ADDRESS);
 	configureExpander(EXPANDER_2_ADDRESS);
+	configureExpander(EXPANDER_3_ADDRESS);
+	configureExpander(EXPANDER_4_ADDRESS);
 
 	while (1) {
 		// Turn on PB0 and PA0 on both expanders
-		setPinState(EXPANDER_1_ADDRESS, REG_OUTPUT_PORTA, 0, 0); // Expander 1, PA0 HIGH
-		setPinState(EXPANDER_1_ADDRESS, REG_OUTPUT_PORTB, 0, 1); // Expander 1, PB0 HIGH
-		setPinState(EXPANDER_2_ADDRESS, REG_OUTPUT_PORTA, 0, 0); // Expander 2, PA0 HIGH
-		setPinState(EXPANDER_2_ADDRESS, REG_OUTPUT_PORTB, 0, 1); // Expander 2, PB0 HIGH
+		setPinState(EXPANDER_1_ADDRESS, REG_OUTPUT_PORTA, 0, 1);
+		setPinState(EXPANDER_1_ADDRESS, REG_OUTPUT_PORTB, 0, 1);
+		
+		setPinState(EXPANDER_2_ADDRESS, REG_OUTPUT_PORTA, 1, 1);
+		setPinState(EXPANDER_2_ADDRESS, REG_OUTPUT_PORTB, 1, 1);
+		
+		setPinState(EXPANDER_3_ADDRESS, REG_OUTPUT_PORTA, 2, 1);
+		setPinState(EXPANDER_3_ADDRESS, REG_OUTPUT_PORTB, 2, 1);
+		
+		setPinState(EXPANDER_4_ADDRESS, REG_OUTPUT_PORTA, 3, 1);
+		setPinState(EXPANDER_4_ADDRESS, REG_OUTPUT_PORTB, 3, 1);
 	}
 }
 
