@@ -1,0 +1,4 @@
+# Dokumentácia Crossroad lights
+
+## Konfigurácia
+
