@@ -74,10 +74,49 @@ class RoadNorth(Road):
 
 
     def draw_left_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x + middle_of_line, y, x + middle_of_line, y + length_of_arrow, fill="white",
+                                width=width)
+        # Left line
+        self.canvas.create_line(x + middle_of_line, y + length_of_arrow, x + middle_of_line + offset,
+                                y + length_of_arrow + offset, fill="white", width=width)
+
+        # Arrow head
+        self.canvas.create_line(x + middle_of_line, y + length_of_arrow + offset, x + middle_of_line + offset,
+                                y + length_of_arrow + offset, fill="white", width=width)
+        self.canvas.create_line(x + middle_of_line + offset, y + length_of_arrow, x + middle_of_line + offset,
+                                y + length_of_arrow + offset, fill="white",
+                                width=width)
+
 
     def draw_right_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x + middle_of_line, y, x + middle_of_line, y + length_of_arrow, fill="white",
+                                width=width)
+        # Right line
+        self.canvas.create_line(x + middle_of_line, y + length_of_arrow, x + middle_of_line - offset,
+                                y + length_of_arrow + offset, fill="white", width=width)
+
+        # Arrow head
+        self.canvas.create_line(x + middle_of_line, y + length_of_arrow + offset, x + middle_of_line - offset,
+                                y + length_of_arrow + offset, fill="white", width=width)
+        self.canvas.create_line(x + middle_of_line - offset, y + length_of_arrow, x + middle_of_line - offset,
+                                y + length_of_arrow + offset, fill="white",
+                                width=width)
 
 
 class RoadSouth(Road):
@@ -101,9 +140,9 @@ class RoadSouth(Road):
         # Draw black line in front of the lights
         self.canvas.create_line(x, y + 102, x + width, y + 102, fill="black", width=2)
 
-        right_lane_coords = (240, 310)
+        right_lane_coords = (280, 310)
         middle_lane_coords = (260, 310)
-        left_lane_coords = (280, 310)
+        left_lane_coords = (240, 310)
 
         if self.directions['R']:
             self.draw_right_arrow(right_lane_coords)
@@ -130,10 +169,43 @@ class RoadSouth(Road):
         self.canvas.create_line(x + middle_of_line + offset, y + offset, x + middle_of_line, y, fill="white", width=width)
 
     def draw_left_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x + middle_of_line, y + offset, x + middle_of_line, y + length_of_arrow + offset, fill="white", width=width)
+
+        # Left line
+        self.canvas.create_line(x + middle_of_line, y + offset, x + middle_of_line - offset, y, fill="white", width=width)
+
+        # Arrow head
+        self.canvas.create_line(x + middle_of_line - offset, y, x + middle_of_line - offset, y + offset, fill="white", width=width)
+        self.canvas.create_line(x + middle_of_line, y, x + middle_of_line - offset, y, fill="white", width=width)
 
     def draw_right_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x + middle_of_line, y + offset, x + middle_of_line, y + length_of_arrow + offset,
+                                fill="white", width=width)
+
+        # Right line
+        self.canvas.create_line(x + middle_of_line, y + offset, x + middle_of_line + offset, y, fill="white",
+                                width=width)
+
+        # Arrow head
+        self.canvas.create_line(x + middle_of_line + offset, y, x + middle_of_line + offset, y + offset, fill="white",
+                                width=width)
+        self.canvas.create_line(x + middle_of_line, y, x + middle_of_line + offset, y, fill="white", width=width)
 
 
 class RoadEast(Road):
@@ -157,9 +229,9 @@ class RoadEast(Road):
         # Draw black line in front of the lights
         self.canvas.create_line(x + width - 102, y, x + width - 102, y + height, fill="black", width=2)
 
-        right_lane_coords = (160, 240)
+        right_lane_coords = (160, 280)
         middle_lane_coords = (160, 260)
-        left_lane_coords = (160, 280)
+        left_lane_coords = (160, 240)
 
         if self.directions['R']:
             self.draw_right_arrow(right_lane_coords)
@@ -191,10 +263,47 @@ class RoadEast(Road):
                                 y + middle_of_line, fill="white", width=width)
 
     def draw_left_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x, y + middle_of_line, x + length_of_arrow, y + middle_of_line, fill="white",
+                                width=width)
+
+        # Left line
+        self.canvas.create_line(x + length_of_arrow, y + middle_of_line, x + length_of_arrow + offset, y + middle_of_line - offset, fill="white", width=width)
+
+        # Arrow head
+        self.canvas.create_line(x + length_of_arrow, y + middle_of_line - offset, x + length_of_arrow + offset, y + middle_of_line - offset, fill="white", width=width)
+        self.canvas.create_line(x + length_of_arrow + offset, y + middle_of_line, x + length_of_arrow + offset, y + middle_of_line - offset, fill="white", width=width)
+
+
 
     def draw_right_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x, y + middle_of_line, x + length_of_arrow, y + middle_of_line, fill="white",
+                                width=width)
+
+        # Right line
+        self.canvas.create_line(x + length_of_arrow, y + middle_of_line, x + length_of_arrow + offset,
+                                y + middle_of_line + offset, fill="white", width=width)
+
+        # Arrow head
+        self.canvas.create_line(x + length_of_arrow, y + middle_of_line + offset, x + length_of_arrow + offset,
+                                y + middle_of_line + offset, fill="white", width=width)
+        self.canvas.create_line(x + length_of_arrow + offset, y + middle_of_line, x + length_of_arrow + offset,
+                                y + middle_of_line + offset, fill="white", width=width)
 
 
 class RoadWest(Road):
@@ -252,7 +361,44 @@ class RoadWest(Road):
                                 y + middle_of_line, fill="white", width=width)
 
     def draw_left_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x + offset, y + middle_of_line, x + length_of_arrow + offset, y + middle_of_line, fill="white",
+                                width=width)
+
+        # Left line
+        self.canvas.create_line(x + offset, y + middle_of_line, x, y + middle_of_line + offset, fill="white",
+                                width=width)
+
+        # Arrow head
+        self.canvas.create_line(x, y + middle_of_line + offset, x, y + middle_of_line, fill="white",
+                                width=width)
+        self.canvas.create_line(x, y + middle_of_line + offset, x + offset, y + middle_of_line + offset, fill="white", width=width)
 
     def draw_right_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 25
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x + offset, y + middle_of_line, x + length_of_arrow + offset, y + middle_of_line,
+                                fill="white",
+                                width=width)
+
+        # Right line
+        self.canvas.create_line(x + offset, y + middle_of_line, x, y + middle_of_line - offset, fill="white",
+                                width=width)
+
+        self.canvas.create_line(x, y + middle_of_line - offset, x, y + middle_of_line, fill="white",
+                                width=width)
+        self.canvas.create_line(x, y + middle_of_line - offset, x + offset, y + middle_of_line - offset, fill="white",
+                                width=width)
