@@ -157,24 +157,38 @@ class RoadEast(Road):
         # Draw black line in front of the lights
         self.canvas.create_line(x + width - 102, y, x + width - 102, y + height, fill="black", width=2)
 
-        # right_lane_coords = (200, 160)
-        # middle_lane_coords = (220, 160)
-        # left_lane_coords = (240, 160)
-        #
-        # if self.directions['R']:
-        #     self.draw_right_arrow(right_lane_coords)
-        # else:
-        #     self.draw_straight_arrow(right_lane_coords)
-        #
-        # if self.directions['L']:
-        #     self.draw_left_arrow(left_lane_coords)
-        # else:
-        #     self.draw_straight_arrow(left_lane_coords)
-        #
-        # self.draw_straight_arrow(middle_lane_coords)
+        right_lane_coords = (160, 240)
+        middle_lane_coords = (160, 260)
+        left_lane_coords = (160, 280)
+
+        if self.directions['R']:
+            self.draw_right_arrow(right_lane_coords)
+        else:
+            self.draw_straight_arrow(right_lane_coords)
+
+        if self.directions['L']:
+            self.draw_left_arrow(left_lane_coords)
+        else:
+            self.draw_straight_arrow(left_lane_coords)
+
+        self.draw_straight_arrow(middle_lane_coords)
 
     def draw_straight_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 30
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        # Main line
+        self.canvas.create_line(x, y + middle_of_line, x + length_of_arrow, y + middle_of_line, fill="white",
+                                width=width)
+        # Arrow head
+        self.canvas.create_line(x + length_of_arrow - offset, y + offset, x + length_of_arrow, y + middle_of_line,
+                                fill="white", width=width)
+        self.canvas.create_line(x + length_of_arrow - offset, y + middle_of_line + offset, x + length_of_arrow,
+                                y + middle_of_line, fill="white", width=width)
 
     def draw_left_arrow(self, coords):
         pass
@@ -204,25 +218,38 @@ class RoadWest(Road):
         # Draw black line in front of the lights
         self.canvas.create_line(x + 102, y, x + 102, y + height, fill="black", width=2)
 
-        # right_lane_coords = (200, 160)
-        # middle_lane_coords = (220, 160)
-        # left_lane_coords = (240, 160)
-        #
-        # if self.directions['R']:
-        #     self.draw_right_arrow(right_lane_coords)
-        # else:
-        #     self.draw_straight_arrow(right_lane_coords)
-        #
-        # if self.directions['L']:
-        #     self.draw_left_arrow(left_lane_coords)
-        # else:
-        #     self.draw_straight_arrow(left_lane_coords)
-        #
-        # self.draw_straight_arrow(middle_lane_coords)
+        right_lane_coords = (310, 200)
+        middle_lane_coords = (310, 220)
+        left_lane_coords = (310, 240)
+
+
+        if self.directions['R']:
+            self.draw_right_arrow(right_lane_coords)
+        else:
+            self.draw_straight_arrow(right_lane_coords)
+
+        if self.directions['L']:
+            self.draw_left_arrow(left_lane_coords)
+        else:
+            self.draw_straight_arrow(left_lane_coords)
+
+        self.draw_straight_arrow(middle_lane_coords)
 
 
     def draw_straight_arrow(self, coords):
-        pass
+        x, y = coords
+
+        length_of_arrow = 30
+        middle_of_line = 10
+        offset = 5
+        width = 2
+
+        self.canvas.create_line(x, y + middle_of_line, x + length_of_arrow, y + middle_of_line, fill="white",
+                                width=width)
+        self.canvas.create_line(x + offset, y + offset, x, y + middle_of_line,
+                                fill="white", width=width)
+        self.canvas.create_line(x + offset, y + middle_of_line + offset, x,
+                                y + middle_of_line, fill="white", width=width)
 
     def draw_left_arrow(self, coords):
         pass
