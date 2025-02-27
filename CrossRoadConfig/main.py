@@ -15,7 +15,7 @@ class TrafficLightConfigurator:
         self.root = root
         self.root.title("Traffic Light Configurator")
 
-        self.background_color = "green"
+        self.background_color = 'green'
         self.canvas = tk.Canvas(root, width=500, height=500, bg=self.background_color)
         self.canvas.pack()
 
@@ -51,10 +51,6 @@ class TrafficLightConfigurator:
         for direction, var in directions.items():
             tk.Checkbutton(road_window, text=direction, variable=var).pack()
 
-        tk.Label(road_window, text="Red Light Duration (s)").pack()
-        red_time = tk.Entry(road_window)
-        red_time.pack()
-
         tk.Label(road_window, text="Green Light Duration (s)").pack()
         green_time = tk.Entry(road_window)
         green_time.pack()
@@ -64,7 +60,7 @@ class TrafficLightConfigurator:
 
         def save_road():
             road_classes = {Orientation.NORTH: RoadNorth, Orientation.EAST: RoadEast, Orientation.SOUTH: RoadSouth, Orientation.WEST: RoadWest}
-            road = road_classes[orientation](self.canvas, {k: v.get() for k, v in directions.items()}, int(red_time.get()), int(green_time.get()), pedestrian_var.get())
+            road = road_classes[orientation](self.canvas, {k: v.get() for k, v in directions.items()}, int(green_time.get()), pedestrian_var.get())
             self.roads[orientation] = road
             road_window.destroy()
             self.draw_road(road, orientation)
@@ -92,7 +88,7 @@ class TrafficLightConfigurator:
             self.roads[orientation].delete(self.background_color)
             del self.roads[orientation]
             self.buttons[orientation].destroy()
-            self.buttons[orientation] = tk.Button(self.btn_frame, text=f"Add Road {orientation.name[0]}", command=lambda o=orientation: self.add_road(o))
+            self.buttons[orientation] = tk.Button(self.btn_frame, text=f"Add Road from {orientation.name[0]}", command=lambda o=orientation: self.add_road(o))
             self.buttons[orientation].pack(side="left", padx=5)
 
     def save_config(self):
