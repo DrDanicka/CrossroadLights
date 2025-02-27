@@ -1,14 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import json
-from enum import Enum
+from orientation import Orientation
 from road import RoadNorth, RoadEast, RoadSouth, RoadWest
-
-class Orientation(Enum):
-    NORTH = 1
-    EAST = 2
-    SOUTH = 3
-    WEST = 4
+from crossroad_validator import validate_crossroad
 
 class TrafficLightConfigurator:
     def __init__(self, root):
@@ -94,6 +89,13 @@ class TrafficLightConfigurator:
     def save_config(self):
         if len(self.roads) < 3:
             messagebox.showwarning("Minimum Roads", "A crossroad must have at least 3 roads.")
+            return
+
+        validation_result, message = validate_crossroad(self.roads)
+        if validation_result:
+            pass
+        else:
+            messagebox.showerror("Invalid Crossroad", message)
             return
 
         file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])

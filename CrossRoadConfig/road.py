@@ -61,7 +61,8 @@ class RoadNorth(Road):
         else:
             self.draw_straight_arrow(left_lane_coords)
 
-        self.draw_straight_arrow(middle_lane_coords)
+        if self.directions['Straight']:
+            self.draw_straight_arrow(middle_lane_coords)
 
         if self.pedestrian:
             self.draw_zebra()
@@ -173,7 +174,8 @@ class RoadSouth(Road):
         else:
             self.draw_straight_arrow(left_lane_coords)
 
-        self.draw_straight_arrow(middle_lane_coords)
+        if self.directions['Straight']:
+            self.draw_straight_arrow(middle_lane_coords)
 
         if self.pedestrian:
             self.draw_zebra()
@@ -275,7 +277,8 @@ class RoadEast(Road):
         else:
             self.draw_straight_arrow(left_lane_coords)
 
-        self.draw_straight_arrow(middle_lane_coords)
+        if self.directions['Straight']:
+            self.draw_straight_arrow(middle_lane_coords)
 
         if self.pedestrian:
             self.draw_zebra()
@@ -384,7 +387,8 @@ class RoadWest(Road):
         else:
             self.draw_straight_arrow(left_lane_coords)
 
-        self.draw_straight_arrow(middle_lane_coords)
+        if self.directions['Straight']:
+            self.draw_straight_arrow(middle_lane_coords)
 
         if self.pedestrian:
             self.draw_zebra()
