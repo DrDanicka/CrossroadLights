@@ -19,6 +19,9 @@ class Road:
     def draw_right_arrow(self, coords):
         pass
 
+    def delete(self, background):
+        pass
+
 
 class RoadNorth(Road):
     def __init__(self, canvas, directions, red_time, green_time, pedestrian):
@@ -45,17 +48,19 @@ class RoadNorth(Road):
         middle_lane_coords = (220, 160)
         left_lane_coords = (240, 160)
 
-        if self.directions['R']:
+        if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
             self.draw_straight_arrow(right_lane_coords)
 
-        if self.directions['L']:
+        if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
             self.draw_straight_arrow(left_lane_coords)
 
         self.draw_straight_arrow(middle_lane_coords)
+
+
 
 
     def draw_straight_arrow(self, coords):
@@ -118,6 +123,9 @@ class RoadNorth(Road):
                                 y + length_of_arrow + offset, fill="white",
                                 width=width)
 
+    def delete(self, background):
+        self.canvas.create_rectangle(200, 50, 300, 200, fill=background, outline=background)
+
 
 class RoadSouth(Road):
     def __init__(self, canvas, directions, red_time, green_time, pedestrian):
@@ -144,12 +152,12 @@ class RoadSouth(Road):
         middle_lane_coords = (260, 310)
         left_lane_coords = (240, 310)
 
-        if self.directions['R']:
+        if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
             self.draw_straight_arrow(right_lane_coords)
 
-        if self.directions['L']:
+        if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
             self.draw_straight_arrow(left_lane_coords)
@@ -207,6 +215,9 @@ class RoadSouth(Road):
                                 width=width)
         self.canvas.create_line(x + middle_of_line, y, x + middle_of_line + offset, y, fill="white", width=width)
 
+    def delete(self, background):
+        self.canvas.create_rectangle(200, 300, 300, 450, fill=background, outline=background)
+
 
 class RoadEast(Road):
     def __init__(self, canvas, directions, red_time, green_time, pedestrian):
@@ -233,12 +244,12 @@ class RoadEast(Road):
         middle_lane_coords = (160, 260)
         left_lane_coords = (160, 240)
 
-        if self.directions['R']:
+        if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
             self.draw_straight_arrow(right_lane_coords)
 
-        if self.directions['L']:
+        if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
             self.draw_straight_arrow(left_lane_coords)
@@ -281,6 +292,8 @@ class RoadEast(Road):
         self.canvas.create_line(x + length_of_arrow, y + middle_of_line - offset, x + length_of_arrow + offset, y + middle_of_line - offset, fill="white", width=width)
         self.canvas.create_line(x + length_of_arrow + offset, y + middle_of_line, x + length_of_arrow + offset, y + middle_of_line - offset, fill="white", width=width)
 
+    def delete(self, background):
+        self.canvas.create_rectangle(50, 200, 200, 300, fill=background, outline=background)
 
 
     def draw_right_arrow(self, coords):
@@ -332,12 +345,12 @@ class RoadWest(Road):
         left_lane_coords = (310, 240)
 
 
-        if self.directions['R']:
+        if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
             self.draw_straight_arrow(right_lane_coords)
 
-        if self.directions['L']:
+        if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
             self.draw_straight_arrow(left_lane_coords)
@@ -402,3 +415,6 @@ class RoadWest(Road):
                                 width=width)
         self.canvas.create_line(x, y + middle_of_line - offset, x + offset, y + middle_of_line - offset, fill="white",
                                 width=width)
+
+    def delete(self, background):
+        self.canvas.create_rectangle(300, 200, 450, 300, fill=background, outline=background)
