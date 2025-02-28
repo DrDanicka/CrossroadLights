@@ -1,6 +1,10 @@
+import time
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import struct
+
+from serial.serialutil import PARITY_NONE, EIGHTBITS
+
 from orientation import Orientation
 from road import RoadNorth, RoadEast, RoadSouth, RoadWest
 from crossroad_validator import validate_crossroad
@@ -221,15 +225,24 @@ class TrafficLightConfigurator:
             return
 
         encoded_data = self.encode_roads()
+        print(encoded_data)
 
         try:
             with serial.Serial(selected_port, baudrate, timeout=1) as ser:
+                # Allow time for the connection to establish
+                time.sleep(2)
                 ser.write(encoded_data)
                 messagebox.showinfo("Success!", "The crossroad configuration has been sent to the microcontroller.")
 
-                response = ser.read(1)
+                time.sleep(0.1)
+                response = ser.read(10)  # Read up to 10 bytes (adjust if needed)
+
                 if response:
-                    print(f"Microcontroller Response: {response.hex()}")
+                    # Print raw bytes as hex
+                    hex_response = " ".join(f"{byte:02X}" for byte in response)
+                    print(f"Received (HEX): {hex_response}")
+                else:
+                    print("No response received.")
         except serial.SerialException as e:
             print(f"Error: {e}")
             messagebox.showerror("Serial Error", "Failed to send data to microcontroller.")
