@@ -5,6 +5,7 @@ from orientation import Orientation
 from road import RoadNorth, RoadEast, RoadSouth, RoadWest
 from crossroad_validator import validate_crossroad
 import serial
+from serial.tools import list_ports
 
 class TrafficLightConfigurator:
     def __init__(self, root):
@@ -23,18 +24,41 @@ class TrafficLightConfigurator:
         self.roads = {}
         self.buttons = {}
 
-        self.btn_frame = tk.Frame(root)
-        self.btn_frame.pack()
+        self.btn_frame_adds_delete = tk.Frame(root)
+        self.btn_frame_adds_delete.pack()
+
+        self.btn_frame_save_verify = tk.Frame(root)
+        self.btn_frame_save_verify.pack()
+
+        self.usart_frame = tk.Frame(root)
+        self.usart_frame.pack()
 
         for orientation in Orientation:
-            self.buttons[orientation] = tk.Button(self.btn_frame, text=f"Add Road from {orientation.name[0]}", command=lambda o=orientation: self.add_road(o))
+            self.buttons[orientation] = tk.Button(self.btn_frame_adds_delete, text=f"Add Road from {orientation.name[0]}", command=lambda o=orientation: self.add_road(o))
             self.buttons[orientation].pack(side="left", padx=5, pady=5)
 
-        self.btn_verify = tk.Button(root, text="Verify Config", command=self.verify_config)
-        self.btn_verify.pack(pady=5)
+        self.btn_verify = tk.Button(self.btn_frame_save_verify, text="Verify Config", command=self.verify_config)
+        self.btn_verify.pack(side="left", padx=5)
 
-        self.btn_save = tk.Button(root, text="Save Config", command=self.save_config)
-        self.btn_save.pack(pady=5)
+        self.btn_save = tk.Button(self.btn_frame_save_verify, text="Save Config", command=self.save_config)
+        self.btn_save.pack(side="left", padx=5)
+
+        self.serial_ports = tk.StringVar(value="No Ports Found")
+        available_ports = self.get_serial_ports()
+        if available_ports:
+            self.serial_ports.set(available_ports[0])  # Set the first available port as default
+        else:
+            self.serial_ports.set("No Ports Found")
+        self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, *available_ports)
+        self.serial_ports_dropdown.pack(side='left', padx=5)
+        self.update_serial_ports()
+        self.root.after(2000, self.auto_refresh_serial_ports)
+        self.serial_ports_dropdown.pack()
+
+        tk.Label(self.usart_frame, text="Baud Rate:").pack(side='left', padx=5)
+        self.baud_rate_entry = tk.Entry(self.usart_frame)
+        self.baud_rate_entry.insert(0, "115200")  # Default baud rate
+        self.baud_rate_entry.pack()
 
         self.btn_send = tk.Button(root, text="Send via USART", command=self.send_config_to_usart)
         self.btn_send.pack(pady=5)
@@ -84,7 +108,7 @@ class TrafficLightConfigurator:
         road.draw(*positions[orientation])
 
     def add_delete_button(self, orientation: Orientation):
-        delete_btn = tk.Button(self.btn_frame, text=f"Delete Road from {orientation.name[0]}", command=lambda: self.delete_road(orientation))
+        delete_btn = tk.Button(self.btn_frame_adds_delete, text=f"Delete Road from {orientation.name[0]}", command=lambda: self.delete_road(orientation))
         delete_btn.pack(side="left", padx=5)
         self.buttons[orientation] = delete_btn
 
@@ -95,7 +119,7 @@ class TrafficLightConfigurator:
             # Delete the road from the dictionary
             del self.roads[orientation]
             self.buttons[orientation].destroy()
-            self.buttons[orientation] = tk.Button(self.btn_frame, text=f"Add Road from {orientation.name[0]}", command=lambda o=orientation: self.add_road(o))
+            self.buttons[orientation] = tk.Button(self.btn_frame_adds_delete, text=f"Add Road from {orientation.name[0]}", command=lambda o=orientation: self.add_road(o))
             self.buttons[orientation].pack(side="left", padx=5)
 
     def encode_roads(self):
@@ -139,6 +163,10 @@ class TrafficLightConfigurator:
 
 
     def verify_config(self):
+        if len(self.roads) < 3:
+            messagebox.showerror("Invalid Crossroad", "A crossroad must have at least 3 roads.")
+            return
+
         validation_result, message = validate_crossroad(self.roads)
         if validation_result:
             messagebox.showinfo("Verification Success", "The crossroad configuration is valid!")
@@ -146,19 +174,58 @@ class TrafficLightConfigurator:
             messagebox.showerror("Verification Failed", message)
 
 
-    def send_config_to_usart(self, port="/dev/ttyUSB0", baudrate=115200):
+    def auto_refresh_serial_ports(self):
+        self.update_serial_ports()
+        self.root.after(2000, self.auto_refresh_serial_ports)
+
+
+    def update_serial_ports(self):
+        available_ports = self.get_serial_ports()
+        previous_port = self.serial_ports.get()
+        if available_ports:
+            self.serial_ports.set(previous_port if previous_port in available_ports else available_ports[0])
+        else:
+            self.serial_ports.set("No Ports Found")
+        self.serial_ports_dropdown['menu'].delete(0, 'end')
+        for port in available_ports:
+            self.serial_ports_dropdown['menu'].add_command(label=port,
+                                                           command=lambda value=port: self.serial_ports.set(value))
+
+
+    def get_serial_ports(self):
+        return [port.device for port in list_ports.comports()]
+
+
+    def send_config_to_usart(self):
         # Reevaluate the crossroad configuration when sending via USART
+        if len(self.roads) < 3:
+            messagebox.showerror("Invalid Crossroad", "A crossroad must have at least 3 roads.")
+            return
+
         validation_result, message = validate_crossroad(self.roads)
         if not validation_result:
             messagebox.showerror("Invalid Crossroad", message)
             return
 
+        # Get the selected serial port
+        selected_port = self.serial_ports.get()
+        if not selected_port:
+            messagebox.showerror("Serial Error", "No serial port selected!")
+            return
+
+        # Get baud rate
+        try:
+            baudrate = int(self.baud_rate_entry.get())
+        except ValueError:
+            messagebox.showerror("Invalid Baud Rate", "Please enter a valid number for baud rate.")
+            return
+
         encoded_data = self.encode_roads()
 
         try:
-            with serial.Serial(port, baudrate, timeout=1) as ser:
+            with serial.Serial(selected_port, baudrate, timeout=1) as ser:
                 ser.write(encoded_data)
-                print("Configuration sent successfully.")
+                messagebox.showinfo("Success!", "The crossroad configuration has been sent to the microcontroller.")
 
                 response = ser.read(1)
                 if response:
