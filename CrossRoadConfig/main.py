@@ -3,8 +3,6 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 import struct
 
-from serial.serialutil import PARITY_NONE, EIGHTBITS
-
 from orientation import Orientation
 from road import RoadNorth, RoadEast, RoadSouth, RoadWest
 from crossroad_validator import validate_crossroad
@@ -47,23 +45,19 @@ class TrafficLightConfigurator:
         self.btn_save = tk.Button(self.btn_frame_save_verify, text="Save Config", command=self.save_config)
         self.btn_save.pack(side="left", padx=5)
 
-        self.serial_ports = tk.StringVar(value="No Ports Found")
-        available_ports = self.get_serial_ports()
-        if available_ports:
-            self.serial_ports.set(available_ports[0])  # Set the first available port as default
-        else:
-            self.serial_ports.set("No Ports Found")
-        self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, *available_ports)
-        self.serial_ports_dropdown.pack(side='left', padx=5)
-        self.update_serial_ports()
-        self.root.after(2000, self.auto_refresh_serial_ports)
-        self.serial_ports_dropdown.pack()
-
+        # Text box for baud rate
         tk.Label(self.usart_frame, text="Baud Rate:").pack(side='left', padx=5)
         self.baud_rate_entry = tk.Entry(self.usart_frame)
         self.baud_rate_entry.insert(0, "115200")  # Default baud rate
-        self.baud_rate_entry.pack()
+        self.baud_rate_entry.pack(side='left', padx=5)
 
+        # Serial port dropdown menu
+        self.serial_ports = tk.StringVar()
+        self.serial_ports_dropdown = None
+        self.update_serial_ports()
+        self.root.after(2000, self.auto_refresh_serial_ports)
+
+        # Button to send configuration via USART
         self.btn_send = tk.Button(root, text="Send via USART", command=self.send_config_to_usart)
         self.btn_send.pack(pady=5)
 
@@ -178,22 +172,26 @@ class TrafficLightConfigurator:
             messagebox.showerror("Verification Failed", message)
 
 
+    def update_serial_ports(self):
+        available_ports = self.get_serial_ports()
+
+        if self.serial_ports_dropdown:
+            self.serial_ports_dropdown.destroy()  # Remove old dropdown
+
+        if available_ports:
+            self.serial_ports.set(available_ports[0])  # Select the first port
+            self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, *available_ports)
+            self.serial_ports_dropdown.config(state="normal")  # Enable dropdown
+        else:
+            self.serial_ports.set("No Ports Found")
+            self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, "No Ports Found")
+            self.serial_ports_dropdown.config(state="disabled")  # Disable dropdown
+
+        self.serial_ports_dropdown.pack(side='left', padx=5)
+
     def auto_refresh_serial_ports(self):
         self.update_serial_ports()
         self.root.after(2000, self.auto_refresh_serial_ports)
-
-
-    def update_serial_ports(self):
-        available_ports = self.get_serial_ports()
-        previous_port = self.serial_ports.get()
-        if available_ports:
-            self.serial_ports.set(previous_port if previous_port in available_ports else available_ports[0])
-        else:
-            self.serial_ports.set("No Ports Found")
-        self.serial_ports_dropdown['menu'].delete(0, 'end')
-        for port in available_ports:
-            self.serial_ports_dropdown['menu'].add_command(label=port,
-                                                           command=lambda value=port: self.serial_ports.set(value))
 
 
     def get_serial_ports(self):
@@ -253,7 +251,6 @@ class TrafficLightConfigurator:
         if file_path:
             with open(file_path, "w") as file:
                 file.write(' '.join(f'0x{b:02X}' for b in self.encode_roads()))
-            messagebox.showinfo("Saved", "Configuration saved successfully!")
 
 if __name__ == "__main__":
     root = tk.Tk()
