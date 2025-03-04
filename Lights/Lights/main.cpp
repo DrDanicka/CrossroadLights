@@ -12,7 +12,6 @@ extern "C" void USART_ReadConfig(void);
 extern "C" uint8_t EEPROM_ReadByte(uint8_t address);
 extern "C" void USART_Transmit(uint8_t data);
 
-extern "C" uint8_t config_buffer[10]; // RAM buffer for new config
 
 void USART_Print(const char* str) {
 	while (*str) {

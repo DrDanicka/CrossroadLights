@@ -26,6 +26,9 @@
 .global USART_Transmit
 
 
+.equ CONFIG_START, 0x0100  ; Place buffer at RAM address 0x0100
+
+
 USART_Receive:
     lds r17, UCSR0A
     sbrs r17, RXC0
@@ -75,19 +78,34 @@ set_1_stop_bit:
     ret
 
 USART_ReadConfig:
-    ldi r18, 0            ; Counter (received bytes)
-    ldi r22, 0            ; EEPROM address (start from 0)
+    ldi r18, 0           ; Counter (0 to 9)
+    ldi r30, lo8(CONFIG_START)  ; Load buffer base address into Z (low byte)
+    ldi r31, hi8(CONFIG_START)  ; Load buffer base address into Z (high byte)
 
 Read_Loop:
-    call USART_Receive    ; Get byte in r16
-    mov r24, r22          ; Move EEPROM address to r24
-    call EEPROM_WriteByte ; Store r16 to EEPROM
-    inc r22               ; Increment EEPROM address
+    call USART_Receive   ; Get byte in r16
+    st X+, r16           ; Store in RAM buffer (post-increment X)
+    
+    inc r18              ; Increment counter
+    cpi r18, 10          ; Stop after 10 bytes
+    brlo Read_Loop       ; Continue loop if less than 10 bytes
 
-    inc r18
-    cpi r18, 10
-    brlo Read_Loop
+    ; Now we have 10 bytes in RAM buffer ? Write directly to EEPROM
 
+    ldi r18, 0           ; Reset counter for EEPROM write
+    ldi r30, lo8(CONFIG_START)  ; Load buffer base address into Z (low byte)
+    ldi r31, hi8(CONFIG_START)  ; Load buffer base address into Z (high byte)
+
+Write_Loop:
+    ld r16, Z+           ; Load byte from RAM buffer
+    mov r24, r18         ; Set EEPROM address
+    call EEPROM_WriteByte ; Write byte to EEPROM
+
+    inc r18              ; Increment counter
+    cpi r18, 10          ; Stop after writing 10 bytes
+    brlo Write_Loop      ; Continue if more bytes left
+
+    ldi r18, 0           ; Reset counter for next USART read
     ret
 
 
