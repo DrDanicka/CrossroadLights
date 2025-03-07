@@ -10,17 +10,17 @@ def validate_crossroad(roads):
     }
 
     left_mapping = {
-        Orientation.NORTH: Orientation.WEST,
-        Orientation.EAST: Orientation.NORTH,
-        Orientation.SOUTH: Orientation.EAST,
-        Orientation.WEST: Orientation.SOUTH
-    }
-
-    right_mapping = {
         Orientation.NORTH: Orientation.EAST,
         Orientation.EAST: Orientation.SOUTH,
         Orientation.SOUTH: Orientation.WEST,
         Orientation.WEST: Orientation.NORTH
+    }
+
+    right_mapping = {
+        Orientation.NORTH: Orientation.WEST,
+        Orientation.EAST: Orientation.NORTH,
+        Orientation.SOUTH: Orientation.EAST,
+        Orientation.WEST: Orientation.SOUTH
     }
 
     for orientation, road in roads.items():

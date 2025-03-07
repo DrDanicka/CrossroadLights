@@ -4,7 +4,7 @@ from tkinter import messagebox, filedialog
 import struct
 
 from orientation import Orientation
-from road import RoadNorth, RoadEast, RoadSouth, RoadWest
+from road import RoadNorth, RoadWest, RoadSouth, RoadEast
 from crossroad_validator import validate_crossroad
 import serial
 from serial.tools import list_ports
@@ -19,9 +19,9 @@ class TrafficLightConfigurator:
         self.canvas.pack()
 
         self.canvas.create_text(250, 20, text="N", font=("Arial", 24, "bold"))
-        self.canvas.create_text(480, 250, text="W", font=("Arial", 24, "bold"))
+        self.canvas.create_text(480, 250, text="E", font=("Arial", 24, "bold"))
         self.canvas.create_text(250, 480, text="S", font=("Arial", 24, "bold"))
-        self.canvas.create_text(20, 250, text="E", font=("Arial", 24, "bold"))
+        self.canvas.create_text(20, 250, text="W", font=("Arial", 24, "bold"))
 
         self.roads = {}
         self.buttons = {}
@@ -84,7 +84,7 @@ class TrafficLightConfigurator:
         tk.Checkbutton(road_window, text="Has Pedestrian Light", variable=pedestrian_var).pack()
 
         def save_road():
-            road_classes = {Orientation.NORTH: RoadNorth, Orientation.EAST: RoadEast, Orientation.SOUTH: RoadSouth, Orientation.WEST: RoadWest}
+            road_classes = {Orientation.NORTH: RoadNorth, Orientation.EAST: RoadWest, Orientation.SOUTH: RoadSouth, Orientation.WEST: RoadEast}
             # Create object of a road based of the orientation
             road = road_classes[orientation](self.canvas, {k: v.get() for k, v in directions.items()}, int(green_time.get()), pedestrian_var.get())
             # Save the object in the dictionary
@@ -99,9 +99,9 @@ class TrafficLightConfigurator:
     def draw_road(self, road, orientation: Orientation):
         positions = {
             Orientation.NORTH: (200, 50),
-            Orientation.WEST: (200, 200),
+            Orientation.EAST: (200, 200),
             Orientation.SOUTH: (200, 200),
-            Orientation.EAST: (50, 200)
+            Orientation.WEST: (50, 200)
         }
         road.draw(*positions[orientation])
 
@@ -126,9 +126,9 @@ class TrafficLightConfigurator:
 
         orientation_mapping = {
             Orientation.NORTH: 0b00,
-            Orientation.WEST: 0b01,
+            Orientation.EAST: 0b01,
             Orientation.SOUTH: 0b10,
-            Orientation.EAST: 0b11
+            Orientation.WEST: 0b11
         }
 
         for i, orientation in enumerate(orientation_mapping.keys()):
