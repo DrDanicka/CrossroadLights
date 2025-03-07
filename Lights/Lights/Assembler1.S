@@ -22,9 +22,10 @@
 
 .global USART_init
 .global USART_ReadConfig
+.global EEPROM_ReadByte
 
 
-.equ CONFIG_START, 0x0100  ; Place buffer at address 0x0100
+.equ CONFIG_START, 0x0100		; Place buffer at address 0x0100
 
 
 USART_Receive:
@@ -37,6 +38,7 @@ USART_Receive:
 
 
 USART_init:
+	; In case there is something important in r16
     push r16
 
     mov r16, r22
@@ -46,10 +48,8 @@ USART_init:
     sts UBRR0L, r24
     sts UBRR0H, r25
 
-    cpi r23, 2
+    cpi r20, 2
     breq set_2_stop_bits
-    cpi r23, 1
-    breq set_1_stop_bit
 
     sts UCSR0C, r16
 
@@ -60,12 +60,9 @@ USART_init:
     ret
 
 set_2_stop_bits:
-    ori r16, (1 << USBS0)
+    ldi r16, (1 << USBS0)
     ret
 
-set_1_stop_bit:
-    andi r16, ~(1 << USBS0)
-    ret
 
 USART_ReadConfig:
     ldi r18, 0					; Counter for 10 bytes
@@ -74,28 +71,62 @@ USART_ReadConfig:
 
 Read_Loop:
     call USART_Receive
-    st Z+, r16					; Store in RAM buffer (post-increment X)
+    st Z+, r16					; Store in RAM buffer (post-increment Z)
     
     inc r18						; Increment counter
     cpi r18, 10					; Stop after 10 bytes
     brlo Read_Loop				; Continue loop if less than 10 bytes
 
-    ; Now we have 10 bytes in RAM buffer ? Write directly to EEPROM
+    ; Now we have 10 bytes in RAM buffer
 
     ldi r18, 0					; Reset counter for EEPROM write
     ldi r30, lo8(CONFIG_START)  ; Load buffer base address into Z (low byte)
     ldi r31, hi8(CONFIG_START)  ; Load buffer base address into Z (high byte)
 
+	; Validate Start byte and checksum
+
+	ld r16, Z                    ; Load first byte (start byte)
+    cpi r16, 0xD9                ; Check if start byte is 0xD9
+    brne Skip_Write              ; If not, skip writing to EEPROM
+
+	ldi r19, 0                   ; r19 will hold the sum
+    ldi r18, 0                   ; Counter for 10 bytes
+
+Checksum_Loop:
+    ld r16, Z+
+    inc r18
+    cpi r18, 9                   ; Stop at 9th byte
+    brsh Check_Last_Byte         ; If at last byte, jump to final check
+    add r19, r16                 ; Sum bytes into r19
+    rjmp Checksum_Loop           ; Repeat for next byte
+
+Check_Last_Byte:
+    ld r17, Z                    ; Load 10th byte (Checksum)
+    andi r19, 0xFF				 ; Take last 8 bits
+    cp r19, r17                  ; Compare calculated checksum with stored checksum
+    brne Skip_Write              ; If checksum is incorrect, skip writing
+
+	; If everything correct we write the config to EEPROM
+	ldi r18, 0                   ; Reset counter for EEPROM write
+    ldi r30, lo8(CONFIG_START)   ; Load buffer base address into Z (low byte)
+    ldi r31, hi8(CONFIG_START)   ; Load buffer base address into Z (high byte)
+
 Write_Loop:
-    ld r16, Z+					; Load byte from buffer
-    mov r24, r18				; Set EEPROM address
-    call EEPROM_WriteByte		; Write byte to EEPROM
+    ld r16, Z+
+    mov r24, r18                 ; Set EEPROM address
+    call EEPROM_WriteByte        ; Write byte to EEPROM
 
-    inc r18						; Increment counter
-    cpi r18, 10					; Stop after writing 10 bytes
-    brlo Write_Loop				; Continue if more bytes left
+    inc r18                      ; Increment counter
+    cpi r18, 10                  ; Stop after writing 10 bytes
+    brlo Write_Loop              ; Continue if more bytes left
 
-    ldi r18, 0					; Reset counter for next USART read
+    rjmp End_ReadConfig
+
+Skip_Write:
+	rjmp End_ReadConfig
+
+End_ReadConfig:
+    ldi r18, 0                   ; Reset counter for next USART read
     ret
 
 
