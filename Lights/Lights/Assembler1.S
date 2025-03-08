@@ -23,9 +23,11 @@
 .global USART_init
 .global USART_ReadConfig
 .global EEPROM_ReadByte
+.global EEPROM_WriteByte
+.global puts_own_implementation
 
 
-.equ CONFIG_START, 0x0100		; Place buffer at address 0x0100
+.equ CONFIG_START, 0x0300		; Place buffer at address 0x0300
 
 
 USART_Receive:
@@ -95,9 +97,9 @@ Read_Loop:
 Checksum_Loop:
     ld r16, Z+
     inc r18
+	add r19, r16                 ; Sum bytes into r19
     cpi r18, 9                   ; Stop at 9th byte
     brsh Check_Last_Byte         ; If at last byte, jump to final check
-    add r19, r16                 ; Sum bytes into r19
     rjmp Checksum_Loop           ; Repeat for next byte
 
 Check_Last_Byte:
@@ -114,7 +116,7 @@ Check_Last_Byte:
 Write_Loop:
     ld r16, Z+
     mov r24, r18                 ; Set EEPROM address
-    call EEPROM_WriteByte        ; Write byte to EEPROM
+    call EEPROM_WriteByteSet     ; Write byte to EEPROM
 
     inc r18                      ; Increment counter
     cpi r18, 10                  ; Stop after writing 10 bytes
@@ -129,8 +131,12 @@ End_ReadConfig:
     ldi r18, 0                   ; Reset counter for next USART read
     ret
 
-
 EEPROM_WriteByte:
+	mov r16, r20
+	mov r30, r22
+	mov r31, r23 
+
+EEPROM_WriteByteSet:
     cli							; Disable interrupts (written in documentation)
 
 EEPROM_Wait:
@@ -169,18 +175,60 @@ SPM_Wait:
 EEPROM_ReadByte:
     ; Wait for EEPROM ready
     ; sbic EECR, EEPE -> this was in documentation, but invalid becasue operand is out of range
+	nop
 	lds r17, EECR
 	sbrc r17, EEPE
     rjmp EEPROM_ReadByte
 
     ; Set address
     sts EEARL, r24
-    sts EEARH, r25
+    sts EEARH, 0x00
 
     ; Start read
     ; sbi EECR, EERE -> this was in documentation, but invalid becasue operand is out of range
 	lds r17, EECR
 	ori r17, (1 << EERE)
-	sts EERE, r17
-    lds r16, EEDR			; Read data register to r16
+	sts EECR, r17
+	nop
+    lds r24, EEDR			; Read data register to r24 -> return register
+    ret
+
+
+puts_own_implementation:
+	; Preserve registers
+	push r16
+	push r17
+	push r30
+	push r31
+
+	; Move adress to Z
+    mov r30, r24
+    mov r31, r25
+
+
+send_next_char:
+    ld r16, Z+
+    tst r16					; Check if end of the string
+    breq end_puts
+
+    call USART_Transmit		; Transmit character in r16
+    rjmp send_next_char
+
+end_puts:
+	; Restore registers
+	pop r31
+	pop r30
+	pop r17
+	pop r16
+
+    ret
+
+
+USART_Transmit:
+    lds r17, UCSR0A			; Read UCSR0A to r17
+    sbrs r17, 5				; Skip if UDRE is set
+    rjmp USART_Transmit
+
+    ; Send data in r16
+    sts UDR0, r16
     ret
