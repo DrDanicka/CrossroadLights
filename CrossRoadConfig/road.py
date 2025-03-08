@@ -242,7 +242,7 @@ class RoadSouth(Road):
         self.canvas.create_rectangle(200, 300, 300, 450, fill=background, outline=background)
 
 
-class RoadEast(Road):
+class RoadWest(Road):
     def __init__(self, canvas, directions, green_time, pedestrian):
         super().__init__(canvas, directions, green_time, pedestrian)
 
@@ -352,7 +352,7 @@ class RoadEast(Road):
     def delete(self, background):
         self.canvas.create_rectangle(50, 200, 200, 300, fill=background, outline=background)
 
-class RoadWest(Road):
+class RoadEast(Road):
     def __init__(self, canvas, directions, green_time, pedestrian):
         super().__init__(canvas, directions, green_time, pedestrian)
 
