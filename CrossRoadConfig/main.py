@@ -279,16 +279,8 @@ class TrafficLightConfigurator:
 
         try:
             # Stop reading USART first
-            self.reading_serial = False
-            if self.serial_connection:
-                self.serial_connection.close()
-                self.serial_connection = None
-
-            with serial.Serial(selected_port, baudrate, timeout=1) as ser:
-                # Allow time for the connection to establish
-                time.sleep(2)
-                ser.write(encoded_data)
-                messagebox.showinfo("Success!", "The crossroad configuration has been sent to the microcontroller.")
+            self.serial_connection.write(encoded_data)
+            messagebox.showinfo("Success!", "The crossroad configuration has been sent to the microcontroller.")
 
         except serial.SerialException as e:
             print(f"Error: {e}")
