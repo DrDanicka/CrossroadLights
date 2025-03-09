@@ -3,31 +3,35 @@
 .equ UCSR0C, 0xC2
 .equ UBRR0L, 0xC4
 .equ UBRR0H, 0xC5
+.equ UDR0, 0xC6
+.equ EECR,  0x3F
+.equ EEDR,  0x40
+.equ EEARL, 0x41
+.equ EEARH, 0x42
+.equ SPMCSR, 0x57
+
 .equ TXEN0, 3
 .equ RXEN0, 4
 .equ RXC0, 7
-.equ UDR0, 0xC6
 .equ USBS0, 3
-.equ EECR,  0x3F
-.equ EEARL, 0x41
-.equ EEARH, 0x42
-.equ EEDR,  0x40
 .equ EEPE,  1
 .equ EERE,  0
 .equ EEMPE, 2
 .equ SPMEN, 0
-.equ SPMCSR, 0x57
-
+.equ UCSZ01, 2
+.equ UCSZ00, 1
+.equ UDRE0, 5
 
 
 .global USART_init
 .global USART_ReadConfig
 .global EEPROM_ReadByte
 .global EEPROM_WriteByte
-.global puts_own_implementation
+.global puts
 
 
 .equ CONFIG_START, 0x0300		; Place buffer at address 0x0300
+
 
 
 USART_Receive:
@@ -35,35 +39,32 @@ USART_Receive:
     sbrs r17, RXC0
     rjmp USART_Receive
 
-    lds r16, UDR0				; Store data byte into r16
+    lds r16, UDR0				; Store received byte into r16
+    ret
+
+
+USART_Transmit:
+    lds r17, UCSR0A				; Read UCSR0A to r17
+    sbrs r17, UDRE0				; Skip if UDRE is set
+    rjmp USART_Transmit
+
+    ; Send data in r16
+    sts UDR0, r16
     ret
 
 
 USART_init:
-	; In case there is something important in r16
-    push r16
-
-    mov r16, r22
-    subi r16, 5
-    rol r16
-
     sts UBRR0L, r24
     sts UBRR0H, r25
 
-    cpi r20, 2
-    breq set_2_stop_bits
-
+	ldi r16, (1<<UCSZ01) | (1<<UCSZ00)		; Set 8 data bits and 1 stop bit
     sts UCSR0C, r16
 
-    ldi r16, (1 << RXEN0) | (1 << TXEN0)
+    ldi r16, (1 << RXEN0) | (1 << TXEN0)	; Enable receive and transmit
     sts UCSR0B, r16
 
-    pop r16
     ret
 
-set_2_stop_bits:
-    ldi r16, (1 << USBS0)
-    ret
 
 
 USART_ReadConfig:
@@ -73,21 +74,20 @@ USART_ReadConfig:
 
 Read_Loop:
     call USART_Receive
-    st Z+, r16					; Store in RAM buffer (post-increment Z)
+    st Z+, r16					; Store in RAM buffer
     
-    inc r18						; Increment counter
+    inc r18
     cpi r18, 10					; Stop after 10 bytes
     brlo Read_Loop				; Continue loop if less than 10 bytes
 
     ; Now we have 10 bytes in RAM buffer
 
-    ldi r18, 0					; Reset counter for EEPROM write
     ldi r30, lo8(CONFIG_START)  ; Load buffer base address into Z (low byte)
     ldi r31, hi8(CONFIG_START)  ; Load buffer base address into Z (high byte)
 
 	; Validate Start byte and checksum
 
-	ld r16, Z                    ; Load first byte (start byte)
+	ld r16, Z                    ; Load start byte
     cpi r16, 0xD9                ; Check if start byte is 0xD9
     brne Skip_Write              ; If not, skip writing to EEPROM
 
@@ -109,13 +109,15 @@ Check_Last_Byte:
     brne Skip_Write              ; If checksum is incorrect, skip writing
 
 	; If everything correct we write the config to EEPROM
+
 	ldi r18, 0                   ; Reset counter for EEPROM write
     ldi r30, lo8(CONFIG_START)   ; Load buffer base address into Z (low byte)
     ldi r31, hi8(CONFIG_START)   ; Load buffer base address into Z (high byte)
 
 Write_Loop:
     ld r16, Z+
-    mov r24, r18                 ; Set EEPROM address
+    mov r24, r18                 ; Set low EEPROM address
+	ldi r25, 0x00				 ; Set up EEPROM address
     call EEPROM_WriteByteSet     ; Write byte to EEPROM
 
     inc r18                      ; Increment counter
@@ -128,13 +130,11 @@ Skip_Write:
 	rjmp End_ReadConfig
 
 End_ReadConfig:
-    ldi r18, 0                   ; Reset counter for next USART read
     ret
 
 EEPROM_WriteByte:
-	mov r16, r20
-	mov r30, r22
-	mov r31, r23 
+	mov r16, r22				; Get data argument from function
+	ldi r25, 0x00				; Set up EEPROM address (low is as argument in r24)
 
 EEPROM_WriteByteSet:
     cli							; Disable interrupts (written in documentation)
@@ -194,13 +194,7 @@ EEPROM_ReadByte:
     ret
 
 
-puts_own_implementation:
-	; Preserve registers
-	push r16
-	push r17
-	push r30
-	push r31
-
+puts:
 	; Move adress to Z
     mov r30, r24
     mov r31, r25
@@ -215,20 +209,4 @@ send_next_char:
     rjmp send_next_char
 
 end_puts:
-	; Restore registers
-	pop r31
-	pop r30
-	pop r17
-	pop r16
-
-    ret
-
-
-USART_Transmit:
-    lds r17, UCSR0A			; Read UCSR0A to r17
-    sbrs r17, 5				; Skip if UDRE is set
-    rjmp USART_Transmit
-
-    ; Send data in r16
-    sts UDR0, r16
     ret
