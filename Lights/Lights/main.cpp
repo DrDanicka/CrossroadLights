@@ -3,23 +3,29 @@
 #include <util/delay.h>
 #include "Road.h"
 #include "CrossRoadConfig.h"
+#include "twi.h"
 
-extern "C" void USART_init(unsigned int ubrr, unsigned int data_bits, unsigned int stop_bits);
+extern "C" void USART_init(unsigned int ubrr);
 extern "C" void USART_ReadConfig(void);
 extern "C" uint8_t EEPROM_ReadByte(uint8_t address);
 extern "C" void EEPROM_WriteByte(uint8_t byte, uint8_t address);
-extern "C" void puts_own_implementation(const char *str);
+extern "C" void puts(const char *str);
 
-#define BAUD 115200
-#define DATA_BITS 8
-#define STOP_BITS 1
 #define LED_PIN PB5
 #define BUTTON_PIN PB4
 #define DEBOUNCE_TIME 50
+
+#define BAUD 115200
 #define FOSC 16000000
 #define MYUBRR FOSC/16/BAUD
 
-bool crossroad_on = true;
+
+enum CrossRoadState{
+	ON,
+	OFF
+};
+
+CrossRoadState crossRoadState = CrossRoadState::OFF;
 
 uint8_t currentEEPROMConfig[10] = {
 	0xD9,
@@ -49,7 +55,7 @@ void loadCrossRoadConfigFromEEPROM(CrossRoadConfig &config) {
 		east_byte1, east_byte2
 	);
 
-	puts_own_implementation("Config loaded successfully!");
+	puts("Config loaded successfully!");
 }
 
 
@@ -60,7 +66,6 @@ bool isEEPROMConfigDifferent() {
 			return true; // EEPROM data is different
 		}
 	}
-	_delay_ms(10);
 
 	return false;  // EEPROM data is the same
 }
@@ -70,14 +75,14 @@ void writeEEPROMToCurrent(){
 		uint8_t currentByte = EEPROM_ReadByte(i);
 		currentEEPROMConfig[i] = currentByte;
 	}
-	_delay_ms(10);
 }
 
 void writeCurrentToEEPROM(){
+	puts("Invalid Config in EEPROM -> switching to previous/default!");
+	
 	for (uint8_t i = 0; i < 10; i++){
-		EEPROM_WriteByte(currentEEPROMConfig[i], i);
+		EEPROM_WriteByte(i, currentEEPROMConfig[i]);
 	}
-	_delay_ms(10);
 }
 
 bool isValidConfigInEEPROM(){
@@ -89,7 +94,7 @@ bool isValidConfigInEEPROM(){
 
 	// Validate start byte (equal to 0xD9)
 	if (startByte != 0xD9) {
-		puts_own_implementation("Incorrect start byte");
+		puts("Incorrect start byte");
 		return false;
 	}
 
@@ -114,7 +119,7 @@ bool isValidConfigInEEPROM(){
 
 	// Verify checksum
 	if ((sum & 0xFF) != storedChecksum) {
-		puts_own_implementation("Incorrect checksum");
+		puts("Incorrect checksum");
 		return false;
 	}
 
@@ -128,64 +133,116 @@ void initButtonAndLED() {
 }
 
 bool isButtonPressed() {
-	if (!(PINB & (1 << BUTTON_PIN))) { // Button is active low
-		_delay_ms(DEBOUNCE_TIME);
-		if (!(PINB & (1 << BUTTON_PIN))) {
-			return true;
-		}
-	}
-	return false;
+    if (!(PINB & (1 << BUTTON_PIN))) {
+        _delay_ms(DEBOUNCE_TIME);
+
+        if (!(PINB & (1 << BUTTON_PIN))) {
+            while (!(PINB & (1 << BUTTON_PIN))) {}
+            return true;  // Button was pressed and released
+        }
+    }
+    return false;  // Button was not pressed
 }
 
 void toggleCrossroadState() {
-	crossroad_on = !crossroad_on; // Toggle state
-	if (crossroad_on) {
-		PORTB |= (1 << LED_PIN);  // Turn LED ON
-		} else {
+	if (crossRoadState == CrossRoadState::ON) {
+		crossRoadState = CrossRoadState::OFF;
 		PORTB &= ~(1 << LED_PIN); // Turn LED OFF
+	} else {
+		crossRoadState = CrossRoadState::ON;
+		PORTB |= (1 << LED_PIN);  // Turn LED ON
 	}
 }
 
+// Global variables for blinking logic
+volatile uint8_t blinkState = 0; // 0 = off, 1 = on
+volatile uint16_t blinkTimer = 0; // Timer for blinking
+
+void blinkLightsOFF() {
+	// Check if it's time to toggle the blink state
+	if (blinkTimer >= 5000) { // 500 ms delay for blinking
+		blinkTimer = 0; // Reset the timer
+		blinkState = !blinkState; // Toggle the blink state
+
+		// Array of all expander addresses
+		uint8_t expanderAddresses[] = {NORTH_ADDRESS, EAST_ADDRESS, SOUTH_ADDRESS, WEST_ADDRESS};
+
+		// Iterate over all expanders and toggle PA1, PA4, and PB4
+		for (uint8_t i = 0; i < sizeof(expanderAddresses) / sizeof(expanderAddresses[0]); i++) {
+			setPinState(expanderAddresses[i], REG_OUTPUT_PORTA, 1, blinkState); // PA1
+			setPinState(expanderAddresses[i], REG_OUTPUT_PORTA, 4, blinkState); // PA4
+			setPinState(expanderAddresses[i], REG_OUTPUT_PORTB, 4, blinkState); // PB4
+		}
+	}
+}
+
+void setLOWAllExpanderPins(){
+	uint8_t expanderAddresses[] = {NORTH_ADDRESS, EAST_ADDRESS, SOUTH_ADDRESS, WEST_ADDRESS};
+
+	// Iterate over all expanders and turnoff all ports
+	for (uint8_t i = 0; i < sizeof(expanderAddresses) / sizeof(expanderAddresses[0]); i++) {
+		for (uint8_t j = 0; j < 8; j++){
+			setPinState(expanderAddresses[i], REG_OUTPUT_PORTA, j, 0);
+			setPinState(expanderAddresses[i], REG_OUTPUT_PORTB, j, 0); // PA1
+		}
+	}
+}
+
+void configureAllExpanders(){
+	configureExpander(NORTH_ADDRESS);
+	configureExpander(EAST_ADDRESS);
+	configureExpander(SOUTH_ADDRESS);
+	configureExpander(WEST_ADDRESS);
+	
+	setLOWAllExpanderPins();
+}
+
 int main(void) {	
-	USART_init(MYUBRR, DATA_BITS, STOP_BITS);
+	USART_init(MYUBRR);
 	initButtonAndLED(); 
+	TWI_Init();
+	configureAllExpanders();
 	
 	CrossRoadConfig config;
-	bool init = true;
+	bool new_usart_config = false;
 	
 	while (true){
 		if (isButtonPressed()) {
 			toggleCrossroadState();
 		}
 		
-		if (crossroad_on){
+		if (crossRoadState == CrossRoadState::ON){
 			// ON state
 			// TODO CrossroadLights functionality
-			
+			setLOWAllExpanderPins();
 		}else{
 			// OFF state
+			blinkLightsOFF();
+			
 			if (!isValidConfigInEEPROM()){
-				writeCurrentToEEPROM();
+ 				writeCurrentToEEPROM();
+ 			}
+
+ 			if (isEEPROMConfigDifferent()){
+ 				loadCrossRoadConfigFromEEPROM(config);
+				writeEEPROMToCurrent();
+ 			}else{
+				if (new_usart_config){
+					puts("Same config accepted!");
+				}
 			}
 			
-			loadCrossRoadConfigFromEEPROM(config);
-			writeEEPROMToCurrent();
+			new_usart_config = false;
 			
-			USART_ReadConfig();
-			
-			
-// 			USART_ReadConfig();
-// 			
-// 			if (init || isEEPROMConfigDifferent()){
-// 				if (!isValidConfigInEEPROM()){
-// 					writeCurrentToEEPROM();
-// 				}
-// 				
-// 				loadCrossRoadConfigFromEEPROM(config);
-// 				writeEEPROMToCurrent();
-// 				init = false;
-// 			}
+			if (UCSR0A & (1 << RXC0)) {
+				USART_ReadConfig();
+				new_usart_config = true;
+			}
 		}
+		
+		// Increment the blink timer (non-blocking)
+		_delay_ms(1); // 1 ms delay
+		blinkTimer++;
 	}
 	
 	return 0;
