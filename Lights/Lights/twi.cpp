@@ -1,7 +1,6 @@
 #include "twi.h"
 
 
-
 // Initialize TWI (I2C)
 void TWI_Init() {
 	// Set bit rate register
@@ -65,9 +64,11 @@ uint8_t readRegister(uint8_t address, uint8_t reg) {
 // Configure the AW9523B expander
 void configureExpander(uint8_t address) {
 	
-	// Set all pins on Port A and Port B as output
-	writeRegister(address, REG_CONFIG_PORTA, 0x00); // Port A as output
-	writeRegister(address, REG_CONFIG_PORTB, 0x00); // Port B as output
+	// Set all pins on port A
+	writeRegister(address, REG_CONFIG_PORTA, 0x00);
+	
+	// Set PB2 as input because of a button there
+	writeRegister(address, REG_CONFIG_PORTB, 0x04);
 
 	// Set all pins on Port A and Port B to GPIO mode
 	writeRegister(address, REG_LED_MODE_B, 0xFF);
@@ -91,4 +92,18 @@ void setPinState(uint8_t address, uint8_t reg, uint8_t pin, bool state) {
 
 	// Write the new state back to the output register
 	writeRegister(address, reg, currentState);
+}
+
+// Reads pin state at address
+bool readPinState(uint8_t address, uint8_t reg, uint8_t pin) {
+	uint8_t portState = readRegister(address, reg);
+	return (portState & (1 << pin)) != 0;
+}
+
+// Configure all expanders
+void configureAllExpanders(){
+	configureExpander(NORTH_ADDRESS);
+	configureExpander(EAST_ADDRESS);
+	configureExpander(SOUTH_ADDRESS);
+	configureExpander(WEST_ADDRESS);
 }
