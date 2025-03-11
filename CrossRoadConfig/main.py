@@ -229,25 +229,41 @@ class TrafficLightConfigurator:
         else:
             messagebox.showerror("Verification Failed", message)
 
-
-    # Serial communication methods
     def update_serial_ports(self):
         # Get available serial ports
         available_ports = self.get_serial_ports()
 
-        if self.serial_ports_dropdown:
-            self.serial_ports_dropdown.destroy()  # Remove old dropdown
-
-        if available_ports:
-            self.serial_ports.set(available_ports[0])  # Select the first port
-            self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, *available_ports)
-            self.serial_ports_dropdown.config(state="normal")  # Enable dropdown
-        else:
+        if not available_ports:
             self.serial_ports.set("No Ports Found")
-            self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, "No Ports Found")
-            self.serial_ports_dropdown.config(state="disabled")  # Disable dropdown
+            available_ports = ["No Ports Found"]
+        elif self.serial_ports.get() not in available_ports:
+            self.serial_ports.set(available_ports[0])  # Set to the first available port only if needed
 
+        # Remove old dropdown
+        if self.serial_ports_dropdown:
+            self.serial_ports_dropdown.destroy()
+
+        # Create a new dropdown menu with updated values
+        self.serial_ports_dropdown = tk.OptionMenu(self.usart_frame, self.serial_ports, *available_ports,
+                                                   command=self.set_selected_port)
+        self.serial_ports_dropdown.config(state="normal" if available_ports[0] != "No Ports Found" else "disabled")
         self.serial_ports_dropdown.pack(side='left', padx=5)
+
+    def set_selected_port(self, value):
+        self.serial_ports.set(value)
+
+        # Stop reading thread safely
+        if self.reading_serial:
+            self.reading_serial = False  # Stop the loop
+            if self.serial_connection:
+                self.serial_connection.close()
+                self.serial_connection = None
+
+        # Give the system a moment to release the port before reopening
+        time.sleep(0.5)
+
+        # Restart USART reading with new port
+        self.start_serial_reading()
 
     def auto_refresh_serial_ports(self):
         # Refresh the serial ports every 2 seconds
@@ -289,9 +305,6 @@ class TrafficLightConfigurator:
             print(f"Error: {e}")
             messagebox.showerror("Serial Error", "Failed to send data to microcontroller.")
 
-        # Start reading USART again
-        self.start_serial_reading()
-
     def start_serial_reading(self):
         # Get selected port from GUI
         selected_port = self.serial_ports.get()
@@ -311,17 +324,17 @@ class TrafficLightConfigurator:
                 self.root.after(3000, self.start_serial_reading)
 
     def read_serial_data(self):
-        while self.reading_serial and self.serial_connection:
+        while self.reading_serial:
+            if not self.serial_connection:
+                break  # Exit if no connection
+
             try:
                 if self.serial_connection.in_waiting:
                     data = self.serial_connection.readline().strip()
                     if data:
                         print(f"Microcontroller: {data.decode('utf-8', errors='ignore')}")
-            except serial.SerialException:
+            except (serial.SerialException, OSError):
                 print("Serial connection lost.")
-                self.reading_serial = False
-                self.serial_connection = None
-                self.root.after(3000, self.start_serial_reading)
                 break
 
     def save_config(self):
