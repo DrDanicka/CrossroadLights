@@ -25,6 +25,7 @@ class TrafficLightConfigurator:
         self.serial_connection = None
         self.serial_thread = None
         self.reading_serial = False
+        self.baud_rate = 115200
 
         # Letters for orientation
         self.canvas.create_text(250, 20, text="N", font=("Arial", 24, "bold"))
@@ -60,12 +61,6 @@ class TrafficLightConfigurator:
         # Add save button
         self.btn_save = tk.Button(self.btn_frame_save_verify, text="Save Config", command=self.save_config)
         self.btn_save.pack(side="left", padx=5)
-
-        # Text box for baud rate
-        tk.Label(self.usart_frame, text="Baud Rate:").pack(side='left', padx=5)
-        self.baud_rate_entry = tk.Entry(self.usart_frame)
-        self.baud_rate_entry.insert(0, "115200")  # Default baud rate
-        self.baud_rate_entry.pack(side='left', padx=5)
 
         # Serial port dropdown menu
         self.serial_ports = tk.StringVar()
@@ -103,6 +98,20 @@ class TrafficLightConfigurator:
         tk.Checkbutton(road_window, text="Has Pedestrian Light", variable=pedestrian_var).pack()
 
         def save_road():
+            # Validate that at least one direction is selected
+            if not any(var.get() for var in directions.values()):
+                messagebox.showerror("Error", "At least one direction (Straight, Left, or Right) must be selected.")
+                return
+
+            # Validate green light duration
+            try:
+                duration = int(green_time.get())
+                if duration <= 0:
+                    raise ValueError("Duration must be greater than 0.")
+            except ValueError:
+                messagebox.showerror("Error", "Please enter a valid positive integer for green light duration.")
+                return
+
             road_classes = {
                 Orientation.NORTH: RoadNorth,
                 Orientation.EAST: RoadEast,
@@ -268,17 +277,11 @@ class TrafficLightConfigurator:
             messagebox.showerror("Serial Error", "No serial port selected!")
             return
 
-        # Get baud rate
-        try:
-            baudrate = int(self.baud_rate_entry.get())
-        except ValueError:
-            messagebox.showerror("Invalid Baud Rate", "Please enter a valid number for baud rate.")
-            return
-
         encoded_data = self.encode_roads()
 
         try:
             # Stop reading USART first
+            time.sleep(1)
             self.serial_connection.write(encoded_data)
             messagebox.showinfo("Success!", "The crossroad configuration has been sent to the microcontroller.")
 
@@ -297,15 +300,9 @@ class TrafficLightConfigurator:
             self.root.after(3000, self.start_serial_reading)
             return
 
-        try:
-            baudrate = int(self.baud_rate_entry.get())
-        except ValueError:
-            self.root.after(3000, self.start_serial_reading)
-            return
-
         if self.serial_connection is None:
             try:
-                self.serial_connection = serial.Serial(selected_port, baudrate, timeout=1)
+                self.serial_connection = serial.Serial(selected_port, self.baud_rate, timeout=1)
                 self.reading_serial = True
                 self.serial_thread = threading.Thread(target=self.read_serial_data, daemon=True)
                 self.serial_thread.start()

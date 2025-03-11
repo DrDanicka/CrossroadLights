@@ -54,12 +54,14 @@ class RoadNorth(Road):
         if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
-            self.draw_straight_arrow(right_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(right_lane_coords)
 
         if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
-            self.draw_straight_arrow(left_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(left_lane_coords)
 
         if self.directions['Straight']:
             self.draw_straight_arrow(middle_lane_coords)
@@ -167,12 +169,14 @@ class RoadSouth(Road):
         if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
-            self.draw_straight_arrow(right_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(right_lane_coords)
 
         if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
-            self.draw_straight_arrow(left_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(left_lane_coords)
 
         if self.directions['Straight']:
             self.draw_straight_arrow(middle_lane_coords)
@@ -270,12 +274,14 @@ class RoadWest(Road):
         if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
-            self.draw_straight_arrow(right_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(right_lane_coords)
 
         if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
-            self.draw_straight_arrow(left_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(left_lane_coords)
 
         if self.directions['Straight']:
             self.draw_straight_arrow(middle_lane_coords)
@@ -380,12 +386,14 @@ class RoadEast(Road):
         if self.directions['Right']:
             self.draw_right_arrow(right_lane_coords)
         else:
-            self.draw_straight_arrow(right_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(right_lane_coords)
 
         if self.directions['Left']:
             self.draw_left_arrow(left_lane_coords)
         else:
-            self.draw_straight_arrow(left_lane_coords)
+            if self.directions['Straight']:
+                self.draw_straight_arrow(left_lane_coords)
 
         if self.directions['Straight']:
             self.draw_straight_arrow(middle_lane_coords)
