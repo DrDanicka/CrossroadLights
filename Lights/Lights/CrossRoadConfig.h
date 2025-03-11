@@ -3,6 +3,7 @@
 
 #include "Road.h"
 
+// CrossRoadConfig object that stores all 4 roads
 class CrossRoadConfig{
 public:
 	Road north;
